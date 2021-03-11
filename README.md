@@ -59,7 +59,7 @@ Syntax:
 #hoge   
  Comment line   
 >hoge   
- Execute command   
+ Remote command   
 <sec   
  Waiting time for the command to finish (seconds)   
  Wait this time and execute the next command   
