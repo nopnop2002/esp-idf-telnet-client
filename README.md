@@ -55,11 +55,13 @@ $ cat data/command.txt
 ```
 
 Syntax:   
-- #hoge   
+```
+#hoge   
  Comment line   
-- >thoge   
+>hoge   
  Execute command   
-- <sec   
+<sec   
  Waiting time for the command to finish (seconds)   
  Wait this time and execute the next command   
+```
 
