@@ -1,6 +1,7 @@
 # esp-idf-telnet-client
 telnet client example for esp-idf.   
 You can execute remote command via telnet.   
+I referred to [this](https://github.com/hasan-kamal/Telnet-Client).
 
 # Installation for ESP32
 ```
