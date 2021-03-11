@@ -57,7 +57,7 @@ $ cat data/command.txt
 Syntax:   
 - #hoge   
  Comment line   
-- />thoge   
+- >thoge   
  Execute command   
 - <sec   
  Waiting time for the command to finish (seconds)   
