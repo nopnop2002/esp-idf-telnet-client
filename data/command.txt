@@ -1,0 +1,12 @@
+#this is example list
+>LANG=C
+<2
+>ls /tmp
+<2
+>uname -a
+<2
+>sleep 20
+<25
+>hogehoge
+<2
+#Execute exit without exit
