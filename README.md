@@ -37,6 +37,9 @@ Telnet Login User name.
 - CONFIG_TELNET_PASSWORD   
 Telnet Login Password.   
 
+![config-main](https://user-images.githubusercontent.com/6020549/110864019-e03af480-8304-11eb-9fae-bf4da9318b8d.jpg)
+![config-app](https://user-images.githubusercontent.com/6020549/110864029-e29d4e80-8304-11eb-9808-acc304675e14.jpg)
+
 # Command list
 ```
 $ cat data/command.txt
@@ -64,4 +67,8 @@ Syntax:
  Waiting time for the command to finish (seconds)   
  Wait this time and execute the next command   
 ```
+
+# Screen Shot
+![ScreenShot-1](https://user-images.githubusercontent.com/6020549/110864068-f47ef180-8304-11eb-9d37-854980b0ec3a.jpg)
+![ScreenShot-2](https://user-images.githubusercontent.com/6020549/110864078-f6e14b80-8304-11eb-87df-89da6935097e.jpg)
 
