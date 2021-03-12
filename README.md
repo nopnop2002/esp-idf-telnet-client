@@ -71,9 +71,10 @@ Syntax:
 
 # STDOUT
 You can see the standard output using a browser.   
+However, Japanese characters are garbled.   
 ![stdout](https://user-images.githubusercontent.com/6020549/111010246-47c27400-83d9-11eb-89e7-2e7b1a3aac51.jpg)
 
 # Screen Shot
 ![ScreenShot-1](https://user-images.githubusercontent.com/6020549/110864068-f47ef180-8304-11eb-9d37-854980b0ec3a.jpg)
-![ScreenShot-2](https://user-images.githubusercontent.com/6020549/110864078-f6e14b80-8304-11eb-87df-89da6935097e.jpg)
+![ScreenShot-2](https://user-images.githubusercontent.com/6020549/111010620-68d79480-83da-11eb-8814-a18316ea2cee.jpg)
 
