@@ -1,4 +1,4 @@
-set(COMPONENT_SRCS "main.c tcp_client.c stdin.c")
+set(COMPONENT_SRCS "main.c tcp_client.c stdin.c stdout.c http_server.c")
 set(COMPONENT_ADD_INCLUDEDIRS ".")
 
 register_component()

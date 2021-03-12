@@ -28,6 +28,8 @@ static const char *TAG = "SOCKET";
 
 extern QueueHandle_t xQueueSocket;
 extern QueueHandle_t xQueueStdin;
+extern QueueHandle_t xQueueStdout;
+extern QueueHandle_t xQueueHttp;
 
 void handle_data_just_read(int sck_fd, char *data, int num_bytes){
 	char out_buf[BUFFER_SZ];
@@ -35,9 +37,8 @@ void handle_data_just_read(int sck_fd, char *data, int num_bytes){
 
 	char IAC = (char)255; //IAC Telnet byte consists of all ones
 
-	SOCKET_t socketBuf;
-	socketBuf.command = CMD_SOCKET;
-	socketBuf.taskHandle = xTaskGetCurrentTaskHandle();
+	STDOUT_t stdoutBuf;
+	stdoutBuf.taskHandle = xTaskGetCurrentTaskHandle();
 
 	for(int i = 0; i < num_bytes; i++){
 		if(data[i] == IAC){
@@ -75,8 +76,9 @@ void handle_data_just_read(int sck_fd, char *data, int num_bytes){
 			}
 		}else{
 			//is data
-			socketBuf.data = data[i];
-			xQueueSend(xQueueSocket, &socketBuf, 0);
+			stdoutBuf.command = CMD_WRITE;
+			stdoutBuf.data = data[i];
+			xQueueSend(xQueueStdout, &stdoutBuf, 0);
 			printf("%c", data[i]);
 		}
 	}
@@ -92,11 +94,6 @@ void handle_data_just_read(int sck_fd, char *data, int num_bytes){
 		}
 	}
 
-#if 0
-	if (out_ptr) {
-		if(DEBUG){ printf("packet sent! out_ptr=%d\n\n", out_ptr); }
-	}
-#endif
 }
 
 #define WAITSEC 5
@@ -130,11 +127,19 @@ void socket_task(void *pvParameters)
 	}
 	ESP_LOGI(TAG, "Successfully connected");
 
+	STDOUT_t stdoutBuf;
+	stdoutBuf.taskHandle = xTaskGetCurrentTaskHandle();
+	stdoutBuf.command = CMD_OPEN;
+	xQueueSend(xQueueStdout, &stdoutBuf, 0);
+
 	char inp_buf[BUFFER_SZ];
 	STDIN_t stdinBuf;
+	stdinBuf.taskHandle = xTaskGetCurrentTaskHandle();
+
 	SOCKET_t socketBuf;
-	socketBuf.command = CMD_STDIN;
-	socketBuf.taskHandle = xTaskGetCurrentTaskHandle();
+
+	HTTP_t httpBuf;
+	httpBuf.taskHandle = xTaskGetCurrentTaskHandle();
 	int waitSec = WAITSEC;
 
 	while (1) {
@@ -162,20 +167,28 @@ void socket_task(void *pvParameters)
 				while(1) { vTaskDelay(1); }
 			}else if(num_read == 0){
 				ESP_LOGW(TAG, "EOF reached, connection closed");
-				while(1) { vTaskDelay(1); }
+				stdinBuf.command = CMD_CLOSE;
+				xQueueSend(xQueueStdin, &stdinBuf, 0);
+				stdoutBuf.command = CMD_CLOSE;
+				xQueueSend(xQueueStdout, &stdoutBuf, 0);
+				httpBuf.command = CMD_CLOSE;
+				xQueueSend(xQueueHttp, &httpBuf, 0);
+				break;
 			}
 			handle_data_just_read(sock, inp_buf, num_read);
 		} else {
 			ESP_LOGI(TAG, "Timeout has been reached and nothing has been received");
-			xQueueSend(xQueueSocket, &socketBuf, 0);
-			xQueueReceive(xQueueStdin, &stdinBuf, portMAX_DELAY);
-			//read from standard input
-			ESP_LOGI(TAG, "reading from stdin(%d bytes read)", stdinBuf.length);
-			waitSec = stdinBuf.wait;
-			write(sock, stdinBuf.data, stdinBuf.length);
+			//send to STDIN
+			stdinBuf.command = CMD_READ;
+			xQueueSend(xQueueStdin, &stdinBuf, 0);
+			//receive from STDIN
+			xQueueReceive(xQueueSocket, &socketBuf, portMAX_DELAY);
+			ESP_LOGI(TAG, "reading from stdin(%d bytes read)", socketBuf.length);
+			waitSec = socketBuf.wait;
+			write(sock, socketBuf.data, socketBuf.length);
 		}
 	}
+	
+	ESP_LOGW(TAG, "finish");
 	vTaskDelete(NULL);
 }
-
-

@@ -69,6 +69,10 @@ Syntax:
  Wait this time and execute the next command   
 ```
 
+# STDOUT
+You can see the standard output using a browser.   
+![stdout](https://user-images.githubusercontent.com/6020549/111010246-47c27400-83d9-11eb-89e7-2e7b1a3aac51.jpg)
+
 # Screen Shot
 ![ScreenShot-1](https://user-images.githubusercontent.com/6020549/110864068-f47ef180-8304-11eb-9d37-854980b0ec3a.jpg)
 ![ScreenShot-2](https://user-images.githubusercontent.com/6020549/110864078-f6e14b80-8304-11eb-87df-89da6935097e.jpg)

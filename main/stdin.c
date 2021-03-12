@@ -8,17 +8,11 @@
 */
 
 #include <stdio.h>
-#include <sys/fcntl.h>
-#include <sys/errno.h>
-#include <sys/unistd.h>
-#include <sys/param.h>
-#include <sys/select.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "esp_log.h"
-#include "esp_netif.h"
-#include "lwip/sockets.h"
-#include "lwip/netdb.h"
 
 #include "cmd.h"
 
@@ -26,6 +20,7 @@ static const char *TAG = "STDIN";
 
 extern QueueHandle_t xQueueSocket;
 extern QueueHandle_t xQueueStdin;
+extern QueueHandle_t xQueueStdout;
 
 extern char *MOUNT_POINT;
 
@@ -84,11 +79,13 @@ void stdin_task(void *pvParameters)
 	esp_log_level_set(TAG, ESP_LOG_WARN);
 
 	SOCKET_t socketBuf;
+	socketBuf.taskHandle = xTaskGetCurrentTaskHandle();
 	STDIN_t stdinBuf;
-	stdinBuf.taskHandle = xTaskGetCurrentTaskHandle();
 	int stdinStatus = 0;
 	//char LF[2] = {0x0a, 0x00};
 	char CRLF[3] = {0x0d, 0x0a, 0x00};
+	STDOUT_t stdoutBuf;
+	stdoutBuf.taskHandle = xTaskGetCurrentTaskHandle();
 
 	// Open file for reading
 	ESP_LOGI(TAG, "Reading file");
@@ -103,59 +100,85 @@ void stdin_task(void *pvParameters)
 
 
 	while(1) {
-		//Waiting for SOCKET receive event.
-		if (xQueueReceive(xQueueSocket, &socketBuf, 0) == pdTRUE) {
-			if (socketBuf.command == CMD_SOCKET) {
-				ESP_LOGD(TAG, "data=%c", socketBuf.data);
-			} else if (socketBuf.command == CMD_STDIN) {
-				ESP_LOGI(TAG, "NODATA stdinStatus=%d", stdinStatus);
-				if (stdinStatus == 0) {
-					ESP_LOGI(TAG, "Send User %s", CONFIG_TELNET_USER);
-					strcpy(stdinBuf.data, CONFIG_TELNET_USER);
-					strcat(stdinBuf.data, CRLF);
-					stdinBuf.length = strlen(stdinBuf.data);
-					stdinBuf.wait = 2;
-					xQueueSend(xQueueStdin, &stdinBuf, 0);
-					stdinStatus++;
-				} else if (stdinStatus == 1) {
-					ESP_LOGI(TAG, "Send Pass %s", CONFIG_TELNET_PASSWORD);
-					strcpy(stdinBuf.data, CONFIG_TELNET_PASSWORD);
-					strcat(stdinBuf.data, CRLF);
-					stdinBuf.length = strlen(stdinBuf.data);
-					stdinBuf.wait = 2;
-					xQueueSend(xQueueStdin, &stdinBuf, 0);
-					stdinStatus++;
-#if 0
-				} else if (stdinStatus == 2) {
-					ESP_LOGI(TAG, "Send Cmd");
-					strcpy(stdinBuf.data, "ls");
-					strcat(stdinBuf.data, CRLF);
-					stdinBuf.length = strlen(stdinBuf.data);
-					xQueueSend(xQueueStdin, &stdinBuf, 0);
-					stdinStatus++;
-#endif
-				} else if (stdinStatus == 2) {
-					char line[64];
-					long wait = getLine(f, line, sizeof(line));
-					ESP_LOGI(TAG, "wait=%ld", wait);
-					if (wait < 0) {
-						ESP_LOGI(TAG, "Send Exit");
-						strcpy(stdinBuf.data, "exit");
-						strcat(stdinBuf.data, CRLF);
-						stdinBuf.length = strlen(stdinBuf.data);
-						stdinBuf.wait = 2;
-					} else {
-						strcpy(stdinBuf.data, line);
-						strcat(stdinBuf.data, CRLF);
-						stdinBuf.length = strlen(stdinBuf.data);
-						stdinBuf.wait = wait;
-					}
-					xQueueSend(xQueueStdin, &stdinBuf, 0);
+		//Waiting for STDIN event.
+		if (xQueueReceive(xQueueStdin, &stdinBuf, portMAX_DELAY) == pdTRUE) {
+			if (stdinBuf.command == CMD_CLOSE) break;
+			ESP_LOGI(TAG, "stdinStatus=%d", stdinStatus);
+			if (stdinStatus == 0) {
+				ESP_LOGI(TAG, "Send User %s", CONFIG_TELNET_USER);
+				socketBuf.command = CMD_USER;
+				strcpy(socketBuf.data, CONFIG_TELNET_USER);
+				strcat(socketBuf.data, CRLF);
+				socketBuf.length = strlen(socketBuf.data);
+				socketBuf.wait = 2;
+				xQueueSend(xQueueSocket, &socketBuf, 0);
+
+				// start underline mode to stdout
+				stdoutBuf.command = CMD_STARTU;
+				xQueueSend(xQueueStdout, &stdoutBuf, 0);
+
+				// send user name to stdout
+				stdoutBuf.command = CMD_WRITE;
+				for(int i=0;i<strlen(socketBuf.data);i++) {
+					stdoutBuf.data = socketBuf.data[i];
+					xQueueSend(xQueueStdout, &stdoutBuf, 0);
 				}
 
+				// stop underline mode to stdout
+				stdoutBuf.command = CMD_STOPU;
+				xQueueSend(xQueueStdout, &stdoutBuf, 0);
+
+				stdinStatus++;
+			} else if (stdinStatus == 1) {
+				ESP_LOGI(TAG, "Send Pass %s", CONFIG_TELNET_PASSWORD);
+				socketBuf.command = CMD_PASS;
+				strcpy(socketBuf.data, CONFIG_TELNET_PASSWORD);
+				strcat(socketBuf.data, CRLF);
+				socketBuf.length = strlen(socketBuf.data);
+				socketBuf.wait = 2;
+				xQueueSend(xQueueSocket, &socketBuf, 0);
+				stdinStatus++;
+#if 0
+			} else if (stdinStatus == 2) {
+				ESP_LOGI(TAG, "Send Cmd");
+				socketBuf.command = CMD_REMOTE;
+				strcpy(socketBuf.data, "ls");
+				strcat(socketBuf.data, CRLF);
+				socketBuf.length = strlen(socketBuf.data);
+				xQueueSend(xQueueSocket, &socketBuf, 0);
+				stdinStatus++;
+#endif
+			} else if (stdinStatus == 2) {
+				char line[64];
+				long wait = getLine(f, line, sizeof(line));
+				ESP_LOGI(TAG, "wait=%ld", wait);
+				if (wait < 0) {
+					ESP_LOGI(TAG, "Send Exit");
+					socketBuf.command = CMD_EXIT;
+					strcpy(socketBuf.data, "exit");
+					strcat(socketBuf.data, CRLF);
+					socketBuf.length = strlen(socketBuf.data);
+					socketBuf.wait = 2;
+
+					// send underline mode to stdout
+					stdoutBuf.command = CMD_STARTU;
+					xQueueSend(xQueueStdout, &stdoutBuf, 0);
+				} else {
+					socketBuf.command = CMD_REMOTE;
+					strcpy(socketBuf.data, line);
+					strcat(socketBuf.data, CRLF);
+					socketBuf.length = strlen(socketBuf.data);
+					socketBuf.wait = wait;
+
+					// send underline mode to stdout
+					stdoutBuf.command = CMD_STARTU;
+					xQueueSend(xQueueStdout, &stdoutBuf, 0);
+				}
+				xQueueSend(xQueueSocket, &socketBuf, 0);
 			}
 		}
-		vTaskDelay(1);
-	}
+	} // end while
 
+    ESP_LOGW(TAG, "finish");
+    vTaskDelete(NULL);
 }

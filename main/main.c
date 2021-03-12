@@ -25,6 +25,9 @@
 
 QueueHandle_t xQueueSocket;
 QueueHandle_t xQueueStdin;
+QueueHandle_t xQueueStdout;
+QueueHandle_t xQueueHttp;
+
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -191,6 +194,8 @@ esp_err_t SPIFFS_Mount(char * path, char * label, int max_files) {
 
 void socket_task(void *pvParameters);
 void stdin_task(void *pvParameters);
+void stdout_task(void *pvParameters);
+void http_task(void *pvParameters);
 
 void app_main(void)
 {
@@ -208,6 +213,13 @@ void app_main(void)
 		ESP_LOGE(TAG, "Connection failed");
 		while(1) { vTaskDelay(1); }
 	}
+
+	/* Print the local IP address */
+	tcpip_adapter_ip_info_t ip_info;
+	ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
+	ESP_LOGI(TAG, "IP Address : %s", ip4addr_ntoa(&ip_info.ip));
+	ESP_LOGI(TAG, "Subnet mask: %s", ip4addr_ntoa(&ip_info.netmask));
+	ESP_LOGI(TAG, "Gateway	  : %s", ip4addr_ntoa(&ip_info.gw));
 
 	// Initialize SPIFFS
 	ESP_LOGI(TAG, "Initializing SPIFFS");
@@ -231,11 +243,21 @@ void app_main(void)
 	fclose(f);
 
 	// Create Queue
-	xQueueSocket = xQueueCreate( 100, sizeof(SOCKET_t) );
+	xQueueSocket = xQueueCreate( 10, sizeof(SOCKET_t) );
 	configASSERT( xQueueSocket );
 	xQueueStdin = xQueueCreate( 10, sizeof(STDIN_t) );
 	configASSERT( xQueueStdin );
+	xQueueStdout = xQueueCreate( 1024, sizeof(STDOUT_t) );
+	configASSERT( xQueueStdout );
+	xQueueHttp = xQueueCreate( 10, sizeof(HTTP_t) );
+	configASSERT( xQueueHttp );
 
 	xTaskCreate(socket_task, "SOCKET", 1024*6, NULL, 2, NULL);
 	xTaskCreate(stdin_task, "STDIN", 1024*6, NULL, 2, NULL);
+	xTaskCreate(stdout_task, "STDOUT", 1024*6, NULL, 2, NULL);
+
+	char cparam0[64];
+	sprintf(cparam0, "%s", ip4addr_ntoa(&ip_info.ip));
+	xTaskCreate(http_task, "HTTP", 1024*6, (void *)cparam0, 2, NULL);
+	vTaskDelay(10);	// You need to wait until the task launch is complete.
 }
