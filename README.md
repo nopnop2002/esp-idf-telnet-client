@@ -78,3 +78,6 @@ Unfortunately, Japanese characters are garbled.
 ![ScreenShot-1](https://user-images.githubusercontent.com/6020549/110864068-f47ef180-8304-11eb-9d37-854980b0ec3a.jpg)
 ![ScreenShot-2](https://user-images.githubusercontent.com/6020549/111010620-68d79480-83da-11eb-8814-a18316ea2cee.jpg)
 
+# Task diagram
+![Telnet-Client](https://user-images.githubusercontent.com/6020549/111012582-e18d1f80-83df-11eb-95ef-2f2191f6ed24.jpg)
+
