@@ -79,5 +79,5 @@ Unfortunately, Japanese characters are garbled.
 ![ScreenShot-2](https://user-images.githubusercontent.com/6020549/111010620-68d79480-83da-11eb-8814-a18316ea2cee.jpg)
 
 # Task diagram
-![Telnet-Client](https://user-images.githubusercontent.com/6020549/111012582-e18d1f80-83df-11eb-95ef-2f2191f6ed24.jpg)
+![Telnet-Client](https://user-images.githubusercontent.com/6020549/111012919-ffa74f80-83e0-11eb-99a6-611d66e1dd24.jpg)
 
