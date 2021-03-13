@@ -71,7 +71,7 @@ Syntax:
 
 # STDOUT
 You can see the standard output using a browser.   
-However, Japanese characters are garbled.   
+Unfortunately, Japanese characters are garbled.   
 ![stdout](https://user-images.githubusercontent.com/6020549/111010246-47c27400-83d9-11eb-89e7-2e7b1a3aac51.jpg)
 
 # Screen Shot
