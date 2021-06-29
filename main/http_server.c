@@ -48,6 +48,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 	/* Get header value string length and allocate memory for length + 1,
 	 * extra byte for null termination */
 	buf_len = httpd_req_get_hdr_value_len(req, "Host") + 1;
+	ESP_LOGI(TAG, "httpd_req_get_hdr_value_len(Host)=%d", buf_len);
 	if (buf_len > 1) {
 		buf = malloc(buf_len);
 		/* Copy null terminated value string into buffer */
@@ -57,7 +58,9 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 		free(buf);
 	}
 
+#if 0
 	buf_len = httpd_req_get_hdr_value_len(req, "Test-Header-2") + 1;
+	ESP_LOGI(TAG, "httpd_req_get_hdr_value_len(Test-Header-2)=%d", buf_len);
 	if (buf_len > 1) {
 		buf = malloc(buf_len);
 		if (httpd_req_get_hdr_value_str(req, "Test-Header-2", buf, buf_len) == ESP_OK) {
@@ -67,6 +70,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 	}
 
 	buf_len = httpd_req_get_hdr_value_len(req, "Test-Header-1") + 1;
+	ESP_LOGI(TAG, "httpd_req_get_hdr_value_len(Test-Header-1)=%d", buf_len);
 	if (buf_len > 1) {
 		buf = malloc(buf_len);
 		if (httpd_req_get_hdr_value_str(req, "Test-Header-1", buf, buf_len) == ESP_OK) {
@@ -74,10 +78,13 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 		}
 		free(buf);
 	}
+#endif
 
+#if 0
 	/* Read URL query string length and allocate memory for length + 1,
 	 * extra byte for null termination */
 	buf_len = httpd_req_get_url_query_len(req) + 1;
+	ESP_LOGI(TAG, "httpd_req_get_url_query_len=%d", buf_len);
 	if (buf_len > 1) {
 		buf = malloc(buf_len);
 		if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
@@ -96,11 +103,15 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 		}
 		free(buf);
 	}
+#endif
 
+#if 0
 	/* Set some custom headers */
 	httpd_resp_set_hdr(req, "Custom-Header-1", "Custom-Value-1");
 	httpd_resp_set_hdr(req, "Custom-Header-2", "Custom-Value-2");
+#endif
 
+	// Get HTTPD global user context
 	const char* user_ctx = (const char*) req->user_ctx;
 	ESP_LOGI(TAG, "user_ctx=[%s]", user_ctx);
 
@@ -139,22 +150,18 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 		fclose(f);
 	}
 
+	// Send a complete HTTP response.
 	httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
 	free(buffer);
 
-#if 0
-	/* Send response with custom headers and body set as the
-	 * string passed in user context*/
-	const char* resp_str = (const char*) req->user_ctx;
-	ESP_LOGI(TAG, "resp_str=[%s] HTTPD_RESP_USE_STRLEN=%d", resp_str, HTTPD_RESP_USE_STRLEN);
-	httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
-#endif
 
+#if 0
 	/* After sending the HTTP response the old HTTP request
 	 * headers are lost. Check if HTTP request headers can be read now. */
 	if (httpd_req_get_hdr_value_len(req, "Host") == 0) {
 		ESP_LOGI(TAG, "Request headers lost");
 	}
+#endif
 	return ESP_OK;
 }
 
@@ -171,9 +178,16 @@ static const httpd_uri_t root = {
 
 static httpd_handle_t start_webserver(int port)
 {
-	httpd_handle_t server = NULL;
+	// Generate default configuration
 	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+	// Empty handle to http_server
+	httpd_handle_t server = NULL;
+
+	// Purge “Least Recently Used” connection
 	config.lru_purge_enable = true;
+
+	// TCP Port number for receiving and transmitting HTTP traffic
 	//config.server_port = 8080;
 	config.server_port = port;
 
@@ -208,7 +222,7 @@ void http_task(void *pvParameters)
 	while(1) {
 		//Waiting for HTTP event.
 		if (xQueueReceive(xQueueHttp, &httpBuf, portMAX_DELAY) == pdTRUE) {
-			ESP_LOGI(TAG, "httpBuf.command=%d", httpBuf.command);
+			ESP_LOGD(TAG, "httpBuf.command=%d", httpBuf.command);
 			ESP_LOGI(TAG, "You can check stdout on %s", url);
 		}
 	}

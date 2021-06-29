@@ -100,7 +100,8 @@ void handle_data_just_read(int sck_fd, char *data, int num_bytes){
 
 void socket_task(void *pvParameters)
 {
-	ESP_LOGI(TAG, "Start TELNET_SERVER=%s", CONFIG_TELNET_SERVER);
+	ESP_LOGI(TAG, "Start");
+	ESP_LOGI(TAG, "Your TELNET SERVER is %s", CONFIG_TELNET_SERVER);
 	char host_ip[] = CONFIG_TELNET_SERVER;
 	int addr_family = 0;
 	int ip_protocol = 0;
@@ -125,7 +126,7 @@ void socket_task(void *pvParameters)
 		ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
 		while(1) { vTaskDelay(1); }
 	}
-	ESP_LOGI(TAG, "Successfully connected");
+	ESP_LOGI(TAG, "Successfully connected to server");
 
 	STDOUT_t stdoutBuf;
 	stdoutBuf.taskHandle = xTaskGetCurrentTaskHandle();
