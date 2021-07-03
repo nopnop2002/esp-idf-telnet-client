@@ -26,142 +26,49 @@ extern QueueHandle_t xQueueHttp;
 
 extern char *MOUNT_POINT;
 
-static fpos_t SPIFFS_FileSize(char *filePath) {
-	fpos_t fsize = 0;
-
-	FILE *fp = fopen(filePath,"rb");
-	ESP_LOGI(__FUNCTION__,"filePath=[%s] fp=%p", filePath, fp);
-	if (fp == NULL) return 0;
-	fseek(fp,0,SEEK_END);
-	fgetpos(fp,&fsize);
-	fclose(fp);
-	ESP_LOGI(__FUNCTION__,"filePath=[%s] fsize=%ld", filePath, fsize);
-	return fsize;
+static esp_err_t file2html(httpd_req_t *req, char * filename) {
+	ESP_LOGI(TAG, "Reading %s", filename);
+	FILE* fhtml = fopen(filename, "r");
+	if (fhtml == NULL) {
+		return ESP_FAIL;
+	} else {
+		char line[128];
+		while (fgets(line, sizeof(line), fhtml) != NULL) {
+			size_t linesz = strlen(line);
+			//remove EOL (CR or LF)
+			for (int i=linesz;i>0;i--) {
+				if (line[i-1] == 0x0a) {
+					line[i-1] = 0;
+				} else if (line[i-1] == 0x0d) {
+					line[i-1] = 0;
+				} else {
+					break;
+				}
+			}
+			ESP_LOGD(TAG, "line=[%s]", line);
+			httpd_resp_sendstr_chunk(req, line);
+		}
+		fclose(fhtml);
+	}
+	return ESP_OK;
 }
 
 /* An HTTP GET handler */
 static esp_err_t root_get_handler(httpd_req_t *req)
 {
-	char*  buf;
-	size_t buf_len;
-
-	/* Get header value string length and allocate memory for length + 1,
-	 * extra byte for null termination */
-	buf_len = httpd_req_get_hdr_value_len(req, "Host") + 1;
-	ESP_LOGI(TAG, "httpd_req_get_hdr_value_len(Host)=%d", buf_len);
-	if (buf_len > 1) {
-		buf = malloc(buf_len);
-		/* Copy null terminated value string into buffer */
-		if (httpd_req_get_hdr_value_str(req, "Host", buf, buf_len) == ESP_OK) {
-			ESP_LOGI(TAG, "Found header => Host: %s", buf);
-		}
-		free(buf);
-	}
-
-#if 0
-	buf_len = httpd_req_get_hdr_value_len(req, "Test-Header-2") + 1;
-	ESP_LOGI(TAG, "httpd_req_get_hdr_value_len(Test-Header-2)=%d", buf_len);
-	if (buf_len > 1) {
-		buf = malloc(buf_len);
-		if (httpd_req_get_hdr_value_str(req, "Test-Header-2", buf, buf_len) == ESP_OK) {
-			ESP_LOGI(TAG, "Found header => Test-Header-2: %s", buf);
-		}
-		free(buf);
-	}
-
-	buf_len = httpd_req_get_hdr_value_len(req, "Test-Header-1") + 1;
-	ESP_LOGI(TAG, "httpd_req_get_hdr_value_len(Test-Header-1)=%d", buf_len);
-	if (buf_len > 1) {
-		buf = malloc(buf_len);
-		if (httpd_req_get_hdr_value_str(req, "Test-Header-1", buf, buf_len) == ESP_OK) {
-			ESP_LOGI(TAG, "Found header => Test-Header-1: %s", buf);
-		}
-		free(buf);
-	}
-#endif
-
-#if 0
-	/* Read URL query string length and allocate memory for length + 1,
-	 * extra byte for null termination */
-	buf_len = httpd_req_get_url_query_len(req) + 1;
-	ESP_LOGI(TAG, "httpd_req_get_url_query_len=%d", buf_len);
-	if (buf_len > 1) {
-		buf = malloc(buf_len);
-		if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
-			ESP_LOGI(TAG, "Found URL query => %s", buf);
-			char param[32];
-			/* Get value of expected key from query string */
-			if (httpd_query_key_value(buf, "query1", param, sizeof(param)) == ESP_OK) {
-				ESP_LOGI(TAG, "Found URL query parameter => query1=%s", param);
-			}
-			if (httpd_query_key_value(buf, "query3", param, sizeof(param)) == ESP_OK) {
-				ESP_LOGI(TAG, "Found URL query parameter => query3=%s", param);
-			}
-			if (httpd_query_key_value(buf, "query2", param, sizeof(param)) == ESP_OK) {
-				ESP_LOGI(TAG, "Found URL query parameter => query2=%s", param);
-			}
-		}
-		free(buf);
-	}
-#endif
-
-#if 0
-	/* Set some custom headers */
-	httpd_resp_set_hdr(req, "Custom-Header-1", "Custom-Value-1");
-	httpd_resp_set_hdr(req, "Custom-Header-2", "Custom-Value-2");
-#endif
-
 	// Get HTTPD global user context
 	const char* user_ctx = (const char*) req->user_ctx;
 	ESP_LOGI(TAG, "user_ctx=[%s]", user_ctx);
 
-	// Open file for reading
-	ESP_LOGI(TAG, "Reading stdout");
+	// Send html
 	char fileName[128];
-	char line[64];
 	sprintf(fileName, "%s/%s", MOUNT_POINT, user_ctx);
 	ESP_LOGI(TAG, "fileName=%s", fileName);
-	fpos_t fsize = SPIFFS_FileSize(fileName);
-	char *buffer = malloc(fsize+1);
-	if (buffer == NULL) {
-		ESP_LOGE(TAG, "Failed to malloc");
-	} else {
-		memset(buffer, 0, fsize+1);
-		FILE* f = fopen(fileName, "r");
-		if (f == NULL) {
-			ESP_LOGW(TAG, "Failed to open file for reading");
-		} else {
-			while (fgets(line, sizeof(line), f) != NULL) {
-				size_t linesz = strlen(line);
-				//remove EOL (CR or LF)
-				for (int i=linesz;i>0;i--) {
-					if (line[i-1] == 0x0a) {
-						line[i-1] = 0;
-					} else if (line[i-1] == 0x0d) {
-						line[i-1] = 0;
-					} else {
-						break;
-					}
-				}
-				ESP_LOGD(TAG, "line=[%s]", line);
-				strcat(buffer, line);
-			}
-		}
-		fclose(f);
-	}
+	file2html(req, fileName);
 
-	// Send a complete HTTP response.
-	httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
-	free(buffer);
+	/* Send empty chunk to signal HTTP response completion */
+	httpd_resp_sendstr_chunk(req, NULL);
 
-
-#if 0
-	/* After sending the HTTP response the old HTTP request
-	 * headers are lost. Check if HTTP request headers can be read now. */
-	if (httpd_req_get_hdr_value_len(req, "Host") == 0) {
-		ESP_LOGI(TAG, "Request headers lost");
-	}
-#endif
 	return ESP_OK;
 }
 
@@ -169,9 +76,6 @@ static const httpd_uri_t root = {
 	.uri	   = "/",
 	.method    = HTTP_GET,
 	.handler   = root_get_handler,
-	/* Let's pass response string in user
-	 * context to demonstrate it's usage */
-	//.user_ctx  = "Hello World!"
 	.user_ctx  = "stdout.txt"
 };
 
@@ -209,7 +113,7 @@ static httpd_handle_t start_webserver(int port)
 void http_task(void *pvParameters)
 {
 	char *task_parameter = (char *)pvParameters;
-	ESP_LOGI(pcTaskGetName(NULL), "Start task_parameter=%s", task_parameter);
+	ESP_LOGI(TAG, "Start task_parameter=%s", task_parameter);
 	char url[64];
 	int port = 8080;
 	sprintf(url, "http://%s:%d", task_parameter, port);
@@ -227,6 +131,7 @@ void http_task(void *pvParameters)
 		}
 	}
 
+	// Never reach here
 	ESP_LOGI(TAG, "finish");
 	vTaskDelete(NULL);
 }

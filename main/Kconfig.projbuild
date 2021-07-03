@@ -4,13 +4,13 @@ menu "Application Configuration"
 		string "WiFi SSID"
 		default "myssid"
 		help
-			SSID (network name) for the example to connect to.
+			SSID (network name) to connect to.
 
 	config ESP_WIFI_PASSWORD
 		string "WiFi Password"
 		default "mypassword"
 		help
-			WiFi password (WPA or WPA2) for the example to use.
+			WiFi password (WPA or WPA2) to connect to.
 
 	config ESP_MAXIMUM_RETRY
 		int "Maximum retry"
@@ -19,13 +19,13 @@ menu "Application Configuration"
 			Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
 
 	config TELNET_SERVER
-		string "Telnet Server"
+		string "Telnet Server IP or mDNS"
 		default "myTelnetServer"
 		help
 			Telnet Server host name or ip address.
 
 	config TELNET_PORT
-		int "Telnet Port"
+		int "Telnet Server Port"
 		default 23
 		help
 			Telnet Server ports.
