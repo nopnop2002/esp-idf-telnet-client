@@ -1,10 +1,10 @@
 /* BSD Socket API Example
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
+	 This example code is in the Public Domain (or CC0 licensed, at your option.)
 
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+	 Unless required by applicable law or agreed to in writing, this
+	 software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+	 CONDITIONS OF ANY KIND, either express or implied.
 */
 
 #include <stdio.h>
@@ -103,18 +103,27 @@ void socket_task(void *pvParameters)
 	ESP_LOGI(TAG, "Start");
 	ESP_LOGI(TAG, "Your TELNET SERVER is %s", CONFIG_TELNET_SERVER);
 	char host_ip[] = CONFIG_TELNET_SERVER;
-	int addr_family = 0;
-	int ip_protocol = 0;
 	esp_log_level_set(TAG, ESP_LOG_WARN);
 
 	struct sockaddr_in dest_addr;
-	dest_addr.sin_addr.s_addr = inet_addr(host_ip);
+	memset(&dest_addr, 0, sizeof(dest_addr));
 	dest_addr.sin_family = AF_INET;
 	dest_addr.sin_port = htons(CONFIG_TELNET_PORT);
-	addr_family = AF_INET;
-	ip_protocol = IPPROTO_IP;
-
-	int sock =	socket(addr_family, SOCK_STREAM, ip_protocol);
+	dest_addr.sin_addr.s_addr = inet_addr(host_ip);
+	ESP_LOGI(TAG, "dest_addr.sin_addr.s_addr=%x", dest_addr.sin_addr.s_addr);
+	if (dest_addr.sin_addr.s_addr == 0xffffffff) {
+		struct hostent *hp;
+		hp = gethostbyname(CONFIG_TELNET_SERVER);
+		if (hp == NULL) {
+			ESP_LOGE(TAG, "FTP Client Error: Connect to %s", CONFIG_TELNET_SERVER);
+			while(1) { vTaskDelay(1); }
+		}
+		struct ip4_addr *ip4_addr;
+		ip4_addr = (struct ip4_addr *)hp->h_addr;
+		dest_addr.sin_addr.s_addr = ip4_addr->addr;
+	}
+	
+	int sock =	socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 	if (sock < 0) {
 		ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
 		while(1) { vTaskDelay(1); }

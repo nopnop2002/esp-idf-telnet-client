@@ -1,9 +1,9 @@
 /* SPIFFS filesystem example.
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
+	 This example code is in the Public Domain (or CC0 licensed, at your option.)
 
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+	 Unless required by applicable law or agreed to in writing, this
+	 software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+	 CONDITIONS OF ANY KIND, either express or implied.
 */
 
 #include <stdio.h>
@@ -36,7 +36,7 @@ static EventGroupHandle_t s_wifi_event_group;
  * - we are connected to the AP with an IP
  * - we failed to connect after the maximum amount of retries */
 #define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT	   BIT1
+#define WIFI_FAIL_BIT  BIT1
 
 static const char *TAG = "MAIN";
 
@@ -215,11 +215,16 @@ void app_main(void)
 	}
 
 	/* Print the local IP address */
-	tcpip_adapter_ip_info_t ip_info;
-	ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
-	ESP_LOGI(TAG, "IP Address : %s", ip4addr_ntoa(&ip_info.ip));
-	ESP_LOGI(TAG, "Subnet mask: %s", ip4addr_ntoa(&ip_info.netmask));
-	ESP_LOGI(TAG, "Gateway	  : %s", ip4addr_ntoa(&ip_info.gw));
+	//tcpip_adapter_ip_info_t ip_info;
+	//ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
+	//ESP_LOGI(TAG, "IP Address : %s", ip4addr_ntoa(&ip_info.ip));
+	//ESP_LOGI(TAG, "Subnet mask: %s", ip4addr_ntoa(&ip_info.netmask));
+	//ESP_LOGI(TAG, "Gateway		: %s", ip4addr_ntoa(&ip_info.gw));
+	esp_netif_ip_info_t ip_info;
+	ESP_ERROR_CHECK(esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info));
+	ESP_LOGI(TAG, "IP Address : " IPSTR, IP2STR(&ip_info.ip));
+	ESP_LOGI(TAG, "Subnet Mask: " IPSTR, IP2STR(&ip_info.netmask));
+	ESP_LOGI(TAG, "Gateway		: " IPSTR, IP2STR(&ip_info.gw));
 
 	// Initialize SPIFFS
 	ESP_LOGI(TAG, "Initializing SPIFFS");
@@ -257,7 +262,8 @@ void app_main(void)
 	xTaskCreate(stdout_task, "STDOUT", 1024*6, NULL, 2, NULL);
 
 	char cparam0[64];
-	sprintf(cparam0, "%s", ip4addr_ntoa(&ip_info.ip));
+	//sprintf(cparam0, "%s", ip4addr_ntoa(&ip_info.ip));
+	sprintf(cparam0, IPSTR, IP2STR(&ip_info.ip));
 	xTaskCreate(http_task, "HTTP", 1024*6, (void *)cparam0, 2, NULL);
 	vTaskDelay(10);	// You need to wait until the task launch is complete.
 }

@@ -20,7 +20,7 @@ menu "Application Configuration"
 
 	config TELNET_SERVER
 		string "Telnet Server IP or mDNS"
-		default "myTelnetServer"
+		default "TelnetServer.local"
 		help
 			Telnet Server host name or ip address.
 
