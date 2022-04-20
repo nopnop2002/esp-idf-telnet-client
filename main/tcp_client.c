@@ -102,14 +102,13 @@ void socket_task(void *pvParameters)
 {
 	ESP_LOGI(TAG, "Start");
 	ESP_LOGI(TAG, "Your TELNET SERVER is %s", CONFIG_TELNET_SERVER);
-	char host_ip[] = CONFIG_TELNET_SERVER;
 	esp_log_level_set(TAG, ESP_LOG_WARN);
 
 	struct sockaddr_in dest_addr;
 	memset(&dest_addr, 0, sizeof(dest_addr));
 	dest_addr.sin_family = AF_INET;
 	dest_addr.sin_port = htons(CONFIG_TELNET_PORT);
-	dest_addr.sin_addr.s_addr = inet_addr(host_ip);
+	dest_addr.sin_addr.s_addr = inet_addr(CONFIG_TELNET_SERVER);
 	ESP_LOGI(TAG, "dest_addr.sin_addr.s_addr=%x", dest_addr.sin_addr.s_addr);
 	if (dest_addr.sin_addr.s_addr == 0xffffffff) {
 		struct hostent *hp;
@@ -128,7 +127,7 @@ void socket_task(void *pvParameters)
 		ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
 		while(1) { vTaskDelay(1); }
 	}
-	ESP_LOGI(TAG, "Socket created, connecting to %s:%d", host_ip, CONFIG_TELNET_PORT);
+	ESP_LOGI(TAG, "Socket created, connecting to %s:%d", CONFIG_TELNET_SERVER, CONFIG_TELNET_PORT);
 
 	int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in6));
 	if (err != 0) {
