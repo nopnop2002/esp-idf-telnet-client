@@ -3,23 +3,15 @@ telnet client example for esp-idf.
 You can execute remote command via telnet.   
 I referred to [this](https://github.com/hasan-kamal/Telnet-Client).
 
-# Installation for ESP32
+# Installation
 ```
 git clone https://github.com/nopnop2002/esp-idf-telnet-client
 cd esp-idf-telnet-client/
-idf.py set-target esp32
+idf.py set-target {esp32/esp32s2/esp32s3/esp32c3}
 idf.py menuconfig
 idf.py flash monitor
 ```
 
-# Installation for ESP32-S2
-```
-git clone https://github.com/nopnop2002/esp-idf-telnet-client
-cd esp-idf-telnet-client/
-idf.py set-target esp32s2
-idf.py menuconfig
-idf.py flash monitor
-```
 
 # Configure
 You have to set this config value with menuconfig.   

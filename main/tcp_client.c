@@ -83,7 +83,8 @@ void handle_data_just_read(int sck_fd, char *data, int num_bytes){
 		}
 	}
 
-	fflush(stdout); //need to flush output here as printf doesn't do so unless '\n' is encountered, and we're printing char-by-char the real data
+	//need to flush output here as printf doesn't do so unless '\n' is encountered, and we're printing char-by-char the real data
+	fflush(stdout);
 
 	if (out_ptr) {
 		if(write(sck_fd, out_buf, out_ptr) == -1){
