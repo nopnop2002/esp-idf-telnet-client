@@ -3,6 +3,9 @@ telnet client example for esp-idf.
 You can execute remote command via telnet.   
 I referred to [this](https://github.com/hasan-kamal/Telnet-Client).
 
+# Software requirement
+esp-idf v4.4/v5.0.   
+
 # Installation
 ```
 git clone https://github.com/nopnop2002/esp-idf-telnet-client

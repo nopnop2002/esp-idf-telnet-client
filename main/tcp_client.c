@@ -8,6 +8,7 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <sys/fcntl.h>
 #include <sys/errno.h>
 #include <sys/unistd.h>
@@ -110,7 +111,7 @@ void socket_task(void *pvParameters)
 	dest_addr.sin_family = AF_INET;
 	dest_addr.sin_port = htons(CONFIG_TELNET_PORT);
 	dest_addr.sin_addr.s_addr = inet_addr(CONFIG_TELNET_SERVER);
-	ESP_LOGI(TAG, "dest_addr.sin_addr.s_addr=%x", dest_addr.sin_addr.s_addr);
+	ESP_LOGI(TAG, "dest_addr.sin_addr.s_addr=0x%"PRIx32, dest_addr.sin_addr.s_addr);
 	if (dest_addr.sin_addr.s_addr == 0xffffffff) {
 		struct hostent *hp;
 		hp = gethostbyname(CONFIG_TELNET_SERVER);
