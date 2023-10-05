@@ -4,14 +4,15 @@ You can execute remote command via telnet.
 I referred to [this](https://github.com/hasan-kamal/Telnet-Client).
 
 # Software requirement
-ESP-IDF V4.4/V5.0.   
+ESP-IDF V4.4/V5.x.   
 ESP-IDF V5.0 is required when using ESP32-C2.   
+ESP-IDF V5.1 is required when using ESP32-C6.   
 
 # Installation
 ```
 git clone https://github.com/nopnop2002/esp-idf-telnet-client
 cd esp-idf-telnet-client/
-idf.py set-target {esp32/esp32s2/esp32s3/esp32c2/esp32c3}
+idf.py set-target {esp32/esp32s2/esp32s3/esp32c2/esp32c3/esp32c6}
 idf.py menuconfig
 idf.py flash monitor
 ```
