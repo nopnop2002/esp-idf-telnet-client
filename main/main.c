@@ -28,7 +28,6 @@ QueueHandle_t xQueueStdin;
 QueueHandle_t xQueueStdout;
 QueueHandle_t xQueueHttp;
 
-
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
 
@@ -68,11 +67,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 
 esp_err_t wifi_init_sta(void)
 {
-	esp_err_t ret_value = ESP_OK;
 	s_wifi_event_group = xEventGroupCreate();
 
 	ESP_ERROR_CHECK(esp_netif_init());
-
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 	esp_netif_create_default_wifi_sta();
 
@@ -107,14 +104,14 @@ esp_err_t wifi_init_sta(void)
 			},
 		},
 	};
-	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-	ESP_ERROR_CHECK(esp_wifi_start() );
-
-	ESP_LOGI(TAG, "wifi_init_sta finished.");
+	ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+	ESP_ERROR_CHECK(esp_wifi_start());
 
 	/* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
 	 * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
+	esp_err_t ret_value = ESP_OK;
 	EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
 			WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
 			pdFALSE,
@@ -124,11 +121,9 @@ esp_err_t wifi_init_sta(void)
 	/* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
 	 * happened. */
 	if (bits & WIFI_CONNECTED_BIT) {
-		ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
-				 CONFIG_ESP_WIFI_SSID, CONFIG_ESP_WIFI_PASSWORD);
+		ESP_LOGI(TAG, "connected to ap SSID:%s password:%s", CONFIG_ESP_WIFI_SSID, CONFIG_ESP_WIFI_PASSWORD);
 	} else if (bits & WIFI_FAIL_BIT) {
-		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
-				 CONFIG_ESP_WIFI_SSID, CONFIG_ESP_WIFI_PASSWORD);
+		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", CONFIG_ESP_WIFI_SSID, CONFIG_ESP_WIFI_PASSWORD);
 		ret_value = ESP_FAIL;
 	} else {
 		ESP_LOGE(TAG, "UNEXPECTED EVENT");
@@ -208,18 +203,9 @@ void app_main(void)
 	ESP_ERROR_CHECK(ret);
 
 	// Initialize WiFi
-	ESP_LOGI(TAG, "Initializing WiFi");
-	if (wifi_init_sta() != ESP_OK) {
-		ESP_LOGE(TAG, "Connection failed");
-		while(1) { vTaskDelay(1); }
-	}
+	ESP_ERROR_CHECK(wifi_init_sta());
 
 	/* Print the local IP address */
-	//tcpip_adapter_ip_info_t ip_info;
-	//ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
-	//ESP_LOGI(TAG, "IP Address : %s", ip4addr_ntoa(&ip_info.ip));
-	//ESP_LOGI(TAG, "Subnet mask: %s", ip4addr_ntoa(&ip_info.netmask));
-	//ESP_LOGI(TAG, "Gateway		: %s", ip4addr_ntoa(&ip_info.gw));
 	esp_netif_ip_info_t ip_info;
 	ESP_ERROR_CHECK(esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info));
 	ESP_LOGI(TAG, "IP Address : " IPSTR, IP2STR(&ip_info.ip));
@@ -228,12 +214,7 @@ void app_main(void)
 
 	// Initialize SPIFFS
 	ESP_LOGI(TAG, "Initializing SPIFFS");
-	//if (SPIFFS_Mount("/data", "storage", 7) != ESP_OK)
-	if (SPIFFS_Mount(MOUNT_POINT, "storage", 7) != ESP_OK)
-	{
-		ESP_LOGE(TAG, "SPIFFS mount failed");
-		while(1) { vTaskDelay(1); }
-	}
+	ESP_ERROR_CHECK(SPIFFS_Mount(MOUNT_POINT, "storage", 7));
 
 	// Open file for reading
 	ESP_LOGI(TAG, "Reading file");
@@ -262,7 +243,6 @@ void app_main(void)
 	xTaskCreate(stdout_task, "STDOUT", 1024*6, NULL, 2, NULL);
 
 	char cparam0[64];
-	//sprintf(cparam0, "%s", ip4addr_ntoa(&ip_info.ip));
 	sprintf(cparam0, IPSTR, IP2STR(&ip_info.ip));
 	xTaskCreate(http_task, "HTTP", 1024*6, (void *)cparam0, 2, NULL);
 	vTaskDelay(10);	// You need to wait until the task launch is complete.
